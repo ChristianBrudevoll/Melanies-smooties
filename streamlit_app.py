@@ -1,0 +1,49 @@
+# Import python packages
+import streamlit as st
+from snowflake.snowpark.context import get_active_session
+from snowflake.snowpark.functions import col
+
+# Write directly to the app
+st.title(f":cup_with_straw: Customize your smootie! :cup_with_straw: ")
+st.write(
+  'Choose the fuits you want in your smootie.'
+)
+
+# Get the current credentials
+session = get_active_session()
+
+my_dataframe = session.table("smoothies.public.fruit_options").select( col( 'FRUIT_NAME'))
+# st.dataframe(data=my_dataframe, use_container_width=True)
+ingredients_list= st.multiselect(
+    'Choose upto 5', my_dataframe,
+    max_selections= 5
+)
+if ingredients_list:
+    # st.write( ingredients_list)
+    st.text( ingredients_list)
+
+    ingredients_string= ''
+    for fruit in ingredients_list:
+        ingredients_string+= fruit+' '
+    st.write( ingredients_string)
+
+    order_name= st.text_input( 'Name to mark the smootie: ')
+    st.write( 'Name on cup: ', order_name)
+
+    Option=''
+    Option= st.selectbox( 'How do you want to be contacted?', 
+                        ( 'Please choose', 'Email', 'SMS', 'Phone call'))
+    st.write( '\>\> ', Option)
+
+    purchease= st.button( 'Submit order')
+    if purchease:
+        my_insert_stmt = """ insert into smoothies.public.orders( name_on_order, ingredients)
+                    values ('""" + order_name + """', '""" + ingredients_string + """')"""
+        st.write( 'SQL: ', my_insert_stmt)
+        session.sql(my_insert_stmt).collect()
+        st.success('Your Smoothie is ordered!', icon="✅")
+
+
+# Taste= st.selectbox( 'What is your favourite taste?', 
+#                    ( 'Banana', 'Blueberry', 'Strawberry', 'Peach'))
+#st.write( '\>\> ', Taste)
